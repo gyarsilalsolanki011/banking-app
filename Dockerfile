@@ -26,13 +26,18 @@ FROM openjdk:17-jdk-slim AS runtime
 # Set working directly
 WORKDIR /app
 
+# Install MySQL client (no netcat needed)
+RUN apt-get update && apt-get install -y default-mysql-client && rm -rf /var/lib/apt/lists/*
+
+# To wait this container for host service to be ready
+COPY docker/wait-for.sh /scripts/wait-for.sh
+RUN chmod +x /scripts/wait-for.sh
+
 # Copy jar from build stage
 COPY --from=build /app/target/spring-boot-banking-app.jar app.jar
-COPY docker/wait-for.sh wait-for.sh
-RUN chmod +x wait-for.sh
 
 # Expose port
 EXPOSE 8080
 
 # Run Jar file
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/scripts/wait-for.sh", "mysql-banking:3306", "java", "-jar", "app.jar"]

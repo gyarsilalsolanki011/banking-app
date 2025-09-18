@@ -1,18 +1,18 @@
 services:
-  mysql:
+  mysql-banking:
     image: mysql:8.0
     container_name: mysql-banking
-    restart: always
     env_file: .env
     ports:
-      - "${HOST_MYSQL_PORT:-3307}:3306"
+      - "${HOST_MYSQL_PORT}:3306"
     volumes:
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro  # ✅ Auto-run init script
       - ${MYSQL_DATA_PATH}:/var/lib/mysql  # ✅ Use path from .env
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro  # ✅ Auto-run init script
     networks:
       - banking-network
+    restart: unless-stopped
 
-  banking-app:
+  banking-backend-app:
     image: gyarsilalsolanki011/banking-backend-app:0.0.3
     container_name: banking-backend-app
     env_file: .env
@@ -25,9 +25,10 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
     depends_on:
-      - mysql
+      - mysql-banking
     networks:
       - banking-network
+    restart: unless-stopped
 
 volumes:
   banking-backend-data:
